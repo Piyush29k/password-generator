@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enhanced Password Generator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 30px 40px;
+      border-radius: 20px;
+      text-align: center;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 400px;
+    }
+
+    .container h2 {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 10px 0;
+      font-size: 15px;
+    }
+
+    input[type="number"] {
+      width: 60px;
+      padding: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    .btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #27ae60;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #2ecc71;
+    }
+
+    .output {
+      margin-top: 20px;
+      padding: 10px;
+      background: #fff;
+      color: #333;
+      border-radius: 10px;
+      font-weight: bold;
+      word-break: break-word;
+      position: relative;
+    }
+
+    #copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .strength {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .weak {
+      color: red;
+    }
+
+    .medium {
+      color: orange;
+    }
+
+    .strong {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔐 Password Generator</h2>
+    <label>
+      Length:
+      <input type="number" id="length" min="4" max="64" value="12" />
+    </label>
+    <label><input type="checkbox" id="upper" checked /> Include Uppercase (A-Z)</label>
+    <label><input type="checkbox" id="lower" checked /> Include Lowercase (a-z)</label>
+    <label><input type="checkbox" id="digits" checked /> Include Numbers (0-9)</label>
+    <label><input type="checkbox" id="symbols" checked /> Include Symbols (!@#...)</label>
+
+    <button class="btn" onclick="generatePassword()">Generate</button>
+
+    <div class="output" id="output">
+      <button id="copy-btn" onclick="copyPassword()">Copy</button>
+      <span id="password-text">Your password will appear here</span>
+      <div class="strength" id="strength"></div>
+    </div>
+  </div>
+
+  <script>
+    function generatePassword() {
+      const data = {
+        length: parseInt(document.getElementById("length").value),
+        upper: document.getElementById("upper").checked,
+        lower: document.getElementById("lower").checked,
+        digits: document.getElementById("digits").checked,
+        symbols: document.getElementById("symbols").checked,
+      };
+
+      fetch("/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          document.getElementById("password-text").textContent = data.password;
+          updateStrengthMeter(data.password);
+        })
+        .catch(() => {
+          document.getElementById("password-text").textContent =
+            "❌ Error generating password.";
+        });
+    }
+
+    function copyPassword() {
+      const password = document.getElementById("password-text").textContent;
+      navigator.clipboard.writeText(password).then(() => {
+        document.getElementById("copy-btn").textContent = "Copied!";
+        setTimeout(() => {
+          document.getElementById("copy-btn").textContent = "Copy";
+        }, 2000);
+      });
+    }
+
+    function updateStrengthMeter(password) {
+      const strengthDisplay = document.getElementById("strength");
+      let strength = 0;
+
+      if (password.length >= 8) strength++;
+      if (/[A-Z]/.test(password)) strength++;
+      if (/[0-9]/.test(password)) strength++;
+      if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+      if (strength <= 1) {
+        strengthDisplay.textContent = "Strength: Weak";
+        strengthDisplay.className = "strength weak";
+      } else if (strength === 2 || strength === 3) {
+        strengthDisplay.textContent = "Strength: Medium";
+        strengthDisplay.className = "strength medium";
+      } else {
+        strengthDisplay.textContent = "Strength: Strong";
+        strengthDisplay.className = "strength strong";
+      }
+    }
+  </script>
+</body>
+</html>
